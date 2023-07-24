@@ -68,6 +68,7 @@ class Pretrained_Models(AbstractModel):
                 self.model = EncoderDecoderModel.from_encoder_decoder_pretrained(model_path, model_path, config=self.configuration)
             else:
                 self.model = model_class.from_pretrained(model_path, config=self.configuration)
+                print("get BART ***")
         else:
             if hasattr(model_class, "from_config"):
                 self.model = model_class.from_config(self.configuration)

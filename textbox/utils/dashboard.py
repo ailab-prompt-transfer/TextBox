@@ -268,8 +268,19 @@ class SummaryTracker:
         if root is not None:
             return root
 
-        project = f"{config['model']}-{config['dataset']}"
-        name = config["filename"][len(project) + 1 :]
+        # ***
+        if "cross_task" in config["source_task"]:
+            project = f"{config['model']}-cross_task-{config['dataset']}"
+            name = f"{config['source_task']}-{config['filename'][len(project) + 1 :]}"
+
+        elif "cross_dataset" in config["source_task"]:
+            project = f"{config['model']}-cross_dataset-{config['dataset']}"
+            name = f"{config['source_task']}-{config['filename'][len(project) + 1 :]}"
+
+        else:
+            project = config["model"]
+            name = config["filename"][len(project) + 1 :]
+
         saved_dir = os.path.join(config["saved_dir"], config["filename"])
 
         root = SummaryTracker(

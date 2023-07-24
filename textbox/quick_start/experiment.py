@@ -79,8 +79,9 @@ class Experiment:
         self.__extended_config = extended_config
         config = self.get_config()
         init_seed(config["seed"], config["reproducibility"])
-
         self.model = get_model(config["model"])(config, self.tokenizer).to(config["device"])
+        print("get PTG ***")
+
         self.logger.info(self.model)
         self.trainer: Trainer = get_trainer(config["model"])(config, self.model, self.accelerator)
         self.do_train = config["do_train"]

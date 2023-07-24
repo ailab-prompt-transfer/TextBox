@@ -21,11 +21,12 @@ class AbstractDataset(Dataset):
         source_filename = os.path.join(config["data_path"], f"{set}.src")
         target_filename = os.path.join(config["data_path"], f"{set}.tgt")
 
-        self.source_text = load_data(source_filename, max_length=self.quick_test)
+        self.source_text = load_data(source_filename, max_length=self.quick_test)[:]  ##***
         self.pretraining = config["pretrain_task"]
         self.is_casual_model = bool(config["model_name"] in CLM_MODELS)
         if self.pretraining is None and self.pretraining != "disabled":
-            self.target_text = load_data(target_filename, max_length=self.quick_test)
+            self.target_text = load_data(target_filename, max_length=self.quick_test)[:]  ##***
+
         self.source_length = self.config["src_len"]
         self.target_length = self.config["tgt_len"]
         self.paired_text = bool(set == "train" or (self.set == "valid" and self.config["metrics_for_best_model"] == ["loss"]))

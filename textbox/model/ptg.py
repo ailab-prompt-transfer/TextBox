@@ -5,10 +5,14 @@ from .pretrained_models import Pretrained_Models
 from transformers import AutoTokenizer, AutoModel
 
 source_task_set = {
-    "cross-task1": ["squad", "wiki", "quora", "wp", "cnndm"],
-    "cross-task2": ["squad", "wiki", "quora", "wp", "pc"],
-    "cross-dataset1": ["msn", "mn", "nr"],
-    "cross-dataset2": ["tc", "da", "mw"],
+    "cross_task1": ["squad", "wiki", "quora", "wp", "cnndm"],
+    "cross_task2": ["squad", "wiki", "quora", "wp", "pc"],
+    "cross_dataset1": ["msn", "mn", "nr"],
+    "cross_dataset2": ["tc", "da", "mw"],
+    "cross_dataset1_paper": ["msn", "mn", "nr", "xsum"],  # 7
+    "cross_dataset2_paper": ["msn", "mn", "nr", "cnndm"],  # 8
+    "cross_dataset3_paper": ["tc", "da", "mw", "dd"],  # 9
+    "cross_dataset4_paper": ["tc", "da", "mw", "pc"],  # 10
 }
 
 
