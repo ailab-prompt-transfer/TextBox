@@ -8,7 +8,6 @@ from .db_ops import MultiWozDB
 
 
 class _ReaderBase(object):
-
     def __init__(self):
         self.train, self.dev, self.test = [], [], []
         self.vocab = None
@@ -49,17 +48,16 @@ class _ReaderBase(object):
 
 
 class MultiWozReader(_ReaderBase):
-
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
 
         self.db = MultiWozDB(self.cfg.dbs)
-        self.nlp = spacy.load('en_core_web_sm')
+        self.nlp = spacy.load("en_core_web_sm")
         self.vocab_size = self._build_vocab()
 
-        self.domain_files = json.loads(open(self.cfg.domain_file_path, 'r').read())
-        self.slot_value_set = json.loads(open(self.cfg.slot_value_set_path, 'r').read())
+        self.domain_files = json.loads(open(self.cfg.domain_file_path, "r").read())
+        self.slot_value_set = json.loads(open(self.cfg.slot_value_set_path, "r").read())
 
         self.exp_files = {}
         self._load_data()
@@ -75,29 +73,29 @@ class MultiWozReader(_ReaderBase):
         load processed data and encode, or load already encoded data
         """
         # directly read processed data and encode
-        self.data = json.loads(open(self.cfg.data_path + self.cfg.data_file, 'r', encoding='utf-8').read().lower())
+        self.data = json.loads(open(self.cfg.data_path + self.cfg.data_file, "r", encoding="utf-8").read().lower())
         self.train, self.dev, self.test = [], [], []
         for fn, dial in self.data.items():
-            if '.json' in fn:
-                fn = fn.replace('.json', '')
+            if ".json" in fn:
+                fn = fn.replace(".json", "")
 
-    def bspan_to_constraint_dict(self, bspan, bspn_mode='bspn'):
+    def bspan_to_constraint_dict(self, bspan, bspn_mode="bspn"):
         bspan = bspan.split() if isinstance(bspan, str) else bspan
         constraint_dict = {}
         domain = None
         conslen = len(bspan)
         for idx, cons in enumerate(bspan):
             cons = self.vocab.decode(cons) if type(cons) is not str else cons
-            if cons == '<eos_b>':
+            if cons == "<eos_b>":
                 break
-            if '[' in cons:
+            if "[" in cons:
                 if cons[1:-1] not in ontology.all_domains:
                     continue
                 domain = cons[1:-1]
             elif cons in ontology.get_slot:
                 if domain is None:
                     continue
-                if cons == 'people':
+                if cons == "people":
                     # handle confusion of value name "people's portraits..." and slot people
                     try:
                         ns = bspan[idx + 1]
@@ -108,7 +106,7 @@ class MultiWozReader(_ReaderBase):
                         continue
                 if not constraint_dict.get(domain):
                     constraint_dict[domain] = {}
-                if bspn_mode == 'bsdx':
+                if bspn_mode == "bsdx":
                     constraint_dict[domain][cons] = 1
                     continue
                 vidx = idx + 1
@@ -117,7 +115,7 @@ class MultiWozReader(_ReaderBase):
                 vt_collect = []
                 vt = bspan[vidx]
                 vt = self.vocab.decode(vt) if type(vt) is not str else vt
-                while vidx < conslen and vt != '<eos_b>' and '[' not in vt and vt not in ontology.get_slot:
+                while vidx < conslen and vt != "<eos_b>" and "[" not in vt and vt not in ontology.get_slot:
                     vt_collect.append(vt)
                     vidx += 1
                     if vidx == conslen:
@@ -125,7 +123,7 @@ class MultiWozReader(_ReaderBase):
                     vt = bspan[vidx]
                     vt = self.vocab.decode(vt) if type(vt) is not str else vt
                 if vt_collect:
-                    constraint_dict[domain][cons] = ' '.join(vt_collect)
+                    constraint_dict[domain][cons] = " ".join(vt_collect)
 
         return constraint_dict
 
@@ -134,7 +132,7 @@ class MultiWozReader(_ReaderBase):
         # print(constraint_dict)
         matnums = self.db.get_match_num(constraint_dict)
         match_dom = turn_domain[0] if len(turn_domain) == 1 else turn_domain[1]
-        match_dom = match_dom[1:-1] if match_dom.startswith('[') else match_dom
+        match_dom = match_dom[1:-1] if match_dom.startswith("[") else match_dom
         match = matnums[match_dom]
         vector = self.db.addDBIndicator(match_dom, match)
         return vector

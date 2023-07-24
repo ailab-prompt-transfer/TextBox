@@ -14,10 +14,10 @@ import wandb
 from wandb import AlertLevel
 from textbox.config.configurator import Config
 
-train_step = 'train/step'
-train_epoch = 'train/epoch'
-valid_step = 'valid/step'
-valid_epoch = 'valid/epoch'
+train_step = "train/step"
+train_epoch = "train/epoch"
+valid_step = "valid/step"
+valid_epoch = "valid/epoch"
 metrics_labels = (train_step, train_epoch, valid_step, valid_epoch)
 
 logger = get_logger(__name__)
@@ -34,12 +34,12 @@ class Timestamp:
 
     def update_axe(self, *name: str):
         """Update one of the timestamp."""
-        axe = '_'.join(name)
+        axe = "_".join(name)
         value = getattr(self, axe)
         if isinstance(value, int):
             setattr(self, axe, value + 1)
         else:
-            get_logger(__name__).warning(f'Failed when updating axe {axe}')
+            get_logger(__name__).warning(f"Failed when updating axe {axe}")
 
     def as_dict(self) -> dict:
         """Get the timestamp as a dictionary. The entries are also metrics labels shown in W&B."""
@@ -67,9 +67,8 @@ class EpochTracker:
         axes: Optional[Timestamp] = None,
         metrics_results: Optional[dict] = None,
     ):
-
         # loss
-        self._avg_loss = 0.
+        self._avg_loss = 0.0
         self._accumulate_step = 0
 
         # metrics
@@ -81,18 +80,18 @@ class EpochTracker:
 
         self._start_time = -math.inf
         self._end_time = math.inf
-        self.mode = mode or 'Epoch'
+        self.mode = mode or "Epoch"
         self.axes = axes if axes is not None else Timestamp()
         self.metrics_for_best_model = metrics_for_best_model or set()
-        if self.mode == 'train':
-            self.desc = 'Train epoch '
+        if self.mode == "train":
+            self.desc = "Train epoch "
             self.serial = self.axes.train_epoch
-        elif self.mode == 'valid':
-            self.desc = ' Validation '
+        elif self.mode == "valid":
+            self.desc = " Validation "
             self.serial = self.axes.valid_epoch
         else:
-            self.desc = 'Epoch '
-            self.serial = ''
+            self.desc = "Epoch "
+            self.serial = ""
         self._has_score = False
         self._has_loss = False
 
@@ -140,12 +139,12 @@ class EpochTracker:
         Else, the sum of metrics results indexed by keys will be returned.
         """
 
-        if 'loss' in self.metrics_for_best_model:
+        if "loss" in self.metrics_for_best_model:
             return -self._avg_loss
-        if 'score' in self._metrics_results:
-            return self._metrics_results['score']
+        if "score" in self._metrics_results:
+            return self._metrics_results["score"]
 
-        score = 0.
+        score = 0.0
         for metric, result in self._metrics_results.items():
             if metric in self.metrics_for_best_model and isinstance(result, float):
                 score += result
@@ -154,29 +153,24 @@ class EpochTracker:
 
     def _add_metric(self, _k: str, _v: Union[str, float], indent, sep) -> str:
         if isinstance(_v, str):
-            return ''
+            return ""
         _o = indent
         if _k.lower() in self.metrics_for_best_model:
-            _o += '<'
+            _o += "<"
         if isinstance(_v, float):
-            _o += f'{_k}: {_v:.2f}'
+            _o += f"{_k}: {_v:.2f}"
         if _k.lower() in self.metrics_for_best_model:
-            _o += '>'
+            _o += ">"
         return _o + sep
 
-    def as_str(self, sep=', ', indent='') -> str:
-        output = ''
+    def as_str(self, sep=", ", indent="") -> str:
+        output = ""
         for metric, result in self.as_dict().items():
             output += self._add_metric(metric, result, indent, sep)
-        return output[:-len(sep)]
+        return output[: -len(sep)]
 
     def epoch_info(
-        self,
-        time_duration: float,
-        current_best: bool = False,
-        desc: Optional[str] = None,
-        serial: Union[int, str, None] = None,
-        source: Optional[Callable] = logger.info
+        self, time_duration: float, current_best: bool = False, desc: Optional[str] = None, serial: Union[int, str, None] = None, source: Optional[Callable] = logger.info
     ):
         r"""Output loss with epoch and time information."""
 
@@ -184,7 +178,7 @@ class EpochTracker:
             serial = self.serial
         output = "{} {} ".format(desc or self.desc, serial)
         if current_best:
-            output += '(best) '
+            output += "(best) "
         output += f"[time: {time_duration:.2f}s, {self.as_str()}]"
 
         source(output)
@@ -275,20 +269,20 @@ class SummaryTracker:
             return root
 
         project = f"{config['model']}-{config['dataset']}"
-        name = config['filename'][len(project) + 1:]
-        saved_dir = os.path.join(config['saved_dir'], config['filename'])
+        name = config["filename"][len(project) + 1 :]
+        saved_dir = os.path.join(config["saved_dir"], config["filename"])
 
         root = SummaryTracker(
-            email=config['email'],
-            is_local_main_process=config['_is_local_main_process'],
-            metrics_for_best_model=config['metrics_for_best_model'],
+            email=config["email"],
+            is_local_main_process=config["_is_local_main_process"],
+            metrics_for_best_model=config["metrics_for_best_model"],
             kwargs=dict(
                 dir=saved_dir,
                 project=project,
                 name=name,
                 config=config.final_config_dict,
                 # mode='disabled' if config['quick_test'] else 'online'
-            )
+            ),
         )
         return root
 
@@ -312,12 +306,8 @@ class SummaryTracker:
 
         except Exception:
             if self._email:
-                config = self.kwargs['config']
-                wandb.alert(
-                    title=f"Error {config['model']}-{config['dataset']}",
-                    text=f"{config['cmd']}\n\n{traceback.format_exc()}",
-                    level=AlertLevel.ERROR
-                )
+                config = self.kwargs["config"]
+                wandb.alert(title=f"Error {config['model']}-{config['dataset']}", text=f"{config['cmd']}\n\n{traceback.format_exc()}", level=AlertLevel.ERROR)
             logger.error(traceback.format_exc())
 
         else:
@@ -326,11 +316,8 @@ class SummaryTracker:
                     try:
                         test_result = self._last_epoch.as_str()
                     except RuntimeError:
-                        test_result = 'None'
-                    wandb.alert(
-                        title=f"Finished {self.kwargs['project']}",
-                        text=f"{self.kwargs['config']['cmd']}\n\n{test_result}"
-                    )
+                        test_result = "None"
+                    wandb.alert(title=f"Finished {self.kwargs['project']}", text=f"{self.kwargs['config']['cmd']}\n\n{test_result}")
                 self.flush_text()
                 _run.finish()
             self.tracker_finished = True
@@ -345,11 +332,11 @@ class SummaryTracker:
             mode: the mode of current epoch (train or valid)
         """
         if self.axes is None:
-            raise RuntimeError('You should decorate the function of experiment with new_experiment!')
+            raise RuntimeError("You should decorate the function of experiment with new_experiment!")
 
         self._current_mode = mode
-        if mode == 'train' or mode == 'valid':
-            self.axes.update_axe(mode, 'epoch')
+        if mode == "train" or mode == "valid":
+            self.axes.update_axe(mode, "epoch")
         self._current_epoch = EpochTracker(self.metrics_for_best_model, mode=mode, axes=self.axes)
         self._current_epoch._on_epoch_start()
 
@@ -362,7 +349,7 @@ class SummaryTracker:
 
     def new_step(self):
         r"""Call at the beginning of one step."""
-        self.axes.update_axe(self._current_mode, 'step')
+        self.axes.update_axe(self._current_mode, "step")
 
     def append_loss(self, loss: Union[float, torch.Tensor]):
         r"""Append loss of current step to tracker and update current step.
@@ -373,21 +360,20 @@ class SummaryTracker:
         if isinstance(loss, torch.Tensor):
             loss = loss.item()
         if math.isnan(loss):
-            raise ValueError('Value is nan.')
+            raise ValueError("Value is nan.")
         self.add_scalar("loss/" + self._current_mode, loss)
         self._current_epoch._append_loss(loss)
 
     @property
     def epoch_loss(self) -> float:
-        r"""Loss of this epoch. Average loss will be calculated and returned.
-        """
+        r"""Loss of this epoch. Average loss will be calculated and returned."""
         return self._current_epoch._avg_loss
 
     def set_metrics_results(self, results: Optional[dict]):
         r"""Record the metrics results."""
         if results is None:
             return
-        tag = 'metrics/' if self._current_mode != 'eval' else 'test/'
+        tag = "metrics/" if self._current_mode != "eval" else "test/"
         for metric, result in results.items():
             if isinstance(result, str):
                 self.add_text(tag + metric, result)

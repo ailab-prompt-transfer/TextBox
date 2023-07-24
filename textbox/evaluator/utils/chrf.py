@@ -64,7 +64,7 @@ def ngram_counts(wordList, order):
     for i in range(nWords):
         for j in range(1, order + 1):
             if i + j <= nWords:
-                ngram = tuple(wordList[i:i + j])
+                ngram = tuple(wordList[i : i + j])
                 counts[j - 1][ngram] += 1
 
     return counts
@@ -91,7 +91,7 @@ def ngram_precrecf(matching, reflen, hyplen, beta):
     ngramRec = defaultdict(float)
     ngramF = defaultdict(float)
 
-    factor = beta ** 2
+    factor = beta**2
 
     for order in matching:
         if hyplen[order] > 0:
@@ -141,17 +141,11 @@ def computeChrF(fpRef, fpHyp, nworder=0, ncorder=6, beta=2, sentence_level_score
 
             # number of overlapping n-grams, total number of ref n-grams, total number of hyp n-grams
             matchingNgramCounts, totalRefNgramCount, totalHypNgramCount = ngram_matches(refNgramCounts, hypNgramCounts)
-            matchingChrNgramCounts, totalChrRefNgramCount, totalChrHypNgramCount = ngram_matches(
-                refChrNgramCounts, hypChrNgramCounts
-            )
+            matchingChrNgramCounts, totalChrRefNgramCount, totalChrHypNgramCount = ngram_matches(refChrNgramCounts, hypChrNgramCounts)
 
             # n-gram f-scores, recalls and precisions
-            ngramF, ngramRec, ngramPrec = ngram_precrecf(
-                matchingNgramCounts, totalRefNgramCount, totalHypNgramCount, beta
-            )
-            chrNgramF, chrNgramRec, chrNgramPrec = ngram_precrecf(
-                matchingChrNgramCounts, totalChrRefNgramCount, totalChrHypNgramCount, beta
-            )
+            ngramF, ngramRec, ngramPrec = ngram_precrecf(matchingNgramCounts, totalRefNgramCount, totalHypNgramCount, beta)
+            chrNgramF, chrNgramRec, chrNgramPrec = ngram_precrecf(matchingChrNgramCounts, totalChrRefNgramCount, totalChrHypNgramCount, beta)
 
             sentRec = (sum(chrNgramRec.values()) + sum(ngramRec.values())) / norder
             sentPrec = (sum(chrNgramPrec.values()) + sum(ngramPrec.values())) / norder
@@ -187,13 +181,11 @@ def computeChrF(fpRef, fpHyp, nworder=0, ncorder=6, beta=2, sentence_level_score
 
     # total precision, recall and F (aritmetic mean of all ngrams)
     totalNgramF, totalNgramRec, totalNgramPrec = ngram_precrecf(totalMatchingCount, totalRefCount, totalHypCount, beta)
-    totalChrNgramF, totalChrNgramRec, totalChrNgramPrec = ngram_precrecf(
-        totalChrMatchingCount, totalChrRefCount, totalChrHypCount, beta
-    )
+    totalChrNgramF, totalChrNgramRec, totalChrNgramPrec = ngram_precrecf(totalChrMatchingCount, totalChrRefCount, totalChrHypCount, beta)
 
     totalF = (sum(totalChrNgramF.values()) + sum(totalNgramF.values())) / norder
     # averageTotalF = averageTotalF / nsent
     # totalRec  = (sum(totalChrNgramRec.values())  + sum(totalNgramRec.values()))  / norder
     # totalPrec = (sum(totalChrNgramPrec.values()) + sum(totalNgramPrec.values())) / norder
 
-    return totalF  #, averageTotalF, totalPrec, totalRec
+    return totalF  # , averageTotalF, totalPrec, totalRec

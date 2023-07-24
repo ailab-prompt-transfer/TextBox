@@ -41,21 +41,20 @@ class HyperTuning:
         space: Union[SpaceType, str],
         algo: Union[Callable, str],
     ):
-
         if isinstance(space, dict):
             self.space = space
         elif isinstance(space, str):
             self.space = self._build_space_from_file(space)
         else:
-            raise ValueError(f'Unrecognized search space configuration {space}.')
+            raise ValueError(f"Unrecognized search space configuration {space}.")
 
         if isinstance(algo, str):
-            algo = algo.split('.')[-1]
+            algo = algo.split(".")[-1]
             self.algo = getattr(self, algo) if hasattr(self, algo) else getattr(hyperopt.tpe, algo)
         elif callable(algo):
             self.algo = algo
         else:
-            raise ValueError(f'Unrecognized algorithm configuration {space}.')
+            raise ValueError(f"Unrecognized algorithm configuration {space}.")
 
         self.max_evals = _space_size(self.space)
 
@@ -65,14 +64,14 @@ class HyperTuning:
             config_file_list=base_config_file_list,
         )
         self.base_config_dict = base_config_dict
-        self.base_config_dict['_hyper_tuning'] = list(self.space.keys())
-        self.base_config_dict['disable_tqdm'] = True
-        self.base_config_dict.setdefault('max_save', 1)
+        self.base_config_dict["_hyper_tuning"] = list(self.space.keys())
+        self.base_config_dict["disable_tqdm"] = True
+        self.base_config_dict.setdefault("max_save", 1)
         self.experiment = Experiment(model, dataset, base_config_file_list, base_config_dict)
         self.config = self.experiment.get_config()
-        self.metrics_for_best_model = self.config['metrics_for_best_model']
-        getLogger('textbox').setLevel(logging.WARNING)
-        self.logger = getLogger('hyper_tuning')
+        self.metrics_for_best_model = self.config["metrics_for_best_model"]
+        getLogger("textbox").setLevel(logging.WARNING)
+        self.logger = getLogger("hyper_tuning")
         self.logger.disabled = False
         self._trial_count = 0
         self.best_trial = -1
@@ -90,48 +89,39 @@ class HyperTuning:
 
         _, test_result = self.experiment.run(extended_config)
         if not isinstance(test_result, dict):
-            return {'status': hyperopt.STATUS_FAIL, 'loss': None}
+            return {"status": hyperopt.STATUS_FAIL, "loss": None}
         ed_time = time()
 
         current_best = False
-        if test_result['score'] > self.best_score:
-            self.best_score = test_result['score']
+        if test_result["score"] > self.best_score:
+            self.best_score = test_result["score"]
             self.best_trial = self._trial_count
             self.best_params = copy(params)
             current_best = True
 
         et = EpochTracker(self.metrics_for_best_model, metrics_results=test_result)
-        et.epoch_info(
-            desc='Trial',
-            serial=self._trial_count,
-            time_duration=ed_time - st_time,
-            current_best=current_best,
-            source=self.logger.info
-        )
+        et.epoch_info(desc="Trial", serial=self._trial_count, time_duration=ed_time - st_time, current_best=current_best, source=self.logger.info)
 
-        test_result['loss'] = test_result['score']
-        test_result['status'] = hyperopt.STATUS_OK
-        del test_result['score']
+        test_result["loss"] = test_result["score"]
+        test_result["status"] = hyperopt.STATUS_OK
+        del test_result["score"]
         self._trial_count += 1
         return test_result
 
     def run(self):
-        self.logger.info('======Hyper Tuning Start======')
+        self.logger.info("======Hyper Tuning Start======")
         fmin(fn=self.fn, space=self.space, algo=self.algo, max_evals=self.max_evals)
-        self.logger.info(
-            f'======Hyper Tuning Finished. Best at {self.best_trial}'
-            f' trial (score = {self.best_score:4f}).======'
-        )
-        self.logger.info(f'Best params: {self.best_params}')
+        self.logger.info(f"======Hyper Tuning Finished. Best at {self.best_trial}" f" trial (score = {self.best_score:4f}).======")
+        self.logger.info(f"Best params: {self.best_params}")
 
     @staticmethod
     def _build_space_from_file(file: Optional[str]) -> Dict[str, Any]:
         space = {}
         assert file is not None, "Configuration of search space must be specified with `params_file`"
-        with open(file, 'r', encoding='utf-8') as fp:
+        with open(file, "r", encoding="utf-8") as fp:
             for line in fp:
                 line = line.strip()
-                if line.startswith('#'):
+                if line.startswith("#"):
                     continue
                 para_list = line.split()
                 if len(para_list) < 3:
@@ -139,7 +129,7 @@ class HyperTuning:
                 para_name, para_type, para_value = para_list[0], para_list[1], "".join(para_list[2:])
 
                 para_value = eval(para_value)
-                if para_type == 'choice':
+                if para_type == "choice":
                     space[para_name] = hp.choice(para_name, para_value)
                 else:
                     para_type = getattr(hp, para_type)
@@ -149,16 +139,9 @@ class HyperTuning:
 
     @staticmethod
     def exhaustive(new_ids, domain, trials, seed, nb_max_successive_failures=1000):
-        r""" This is for exhaustive search in HyperTuning.
-
-        """
+        r"""This is for exhaustive search in HyperTuning."""
         # Build a hash set for previous trials
-        hashset = set([
-            hash(
-                frozenset([(key, value[0]) if len(value) > 0 else (key, None)
-                           for key, value in trial['misc']['vals'].items()])
-            ) for trial in trials.trials
-        ])
+        hashset = set([hash(frozenset([(key, value[0]) if len(value) > 0 else (key, None) for key, value in trial["misc"]["vals"].items()])) for trial in trials.trials])
 
         rng = np.random.default_rng(seed)
         r_val = []
@@ -170,19 +153,18 @@ class HyperTuning:
             while not new_sample:
                 # -- sample new specs, indices, values
                 indices, values = pyll.rec_eval(
-                    domain.s_idxs_vals, memo={
+                    domain.s_idxs_vals,
+                    memo={
                         domain.s_new_ids: [new_id],
                         domain.s_rng: rng,
-                    }
+                    },
                 )
                 new_result = domain.new_result()
                 new_misc = dict(tid=new_id, cmd=domain.cmd, workdir=domain.workdir)
                 miscs_update_idxs_vals([new_misc], indices, values)
 
                 # Compare with previous hashes
-                h = hash(
-                    frozenset([(key, value[0]) if len(value) > 0 else (key, None) for key, value in values.items()])
-                )
+                h = hash(frozenset([(key, value[0]) if len(value) > 0 else (key, None) for key, value in values.items()]))
                 if h not in hashset:
                     new_sample = True
                 else:
@@ -216,7 +198,7 @@ def run_hyper(
     hyper_tuning.run()
 
 
-def _find_all_nodes(root: SpaceType, node_type: str = 'switch') -> Iterator[Apply]:
+def _find_all_nodes(root: SpaceType, node_type: str = "switch") -> Iterator[Apply]:
     if isinstance(root, (list, tuple)):
         for node in root:
             yield from _find_all_nodes(node, node_type)
@@ -236,7 +218,7 @@ def _find_all_nodes(root: SpaceType, node_type: str = 'switch') -> Iterator[Appl
 
 def _space_size(space: SpaceType) -> int:
     num = 1
-    for node in _find_all_nodes(space, 'switch'):
-        assert node.pos_args[0].name == 'hyperopt_param'
+    for node in _find_all_nodes(space, "switch"):
+        assert node.pos_args[0].name == "hyperopt_param"
         num *= len(node.pos_args) - 1
     return num

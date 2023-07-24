@@ -11,7 +11,6 @@ MAX_TOKENIZE_NUM = 1000000
 
 
 class AbstractDataset(Dataset):
-
     def __init__(self, config, set):
         super().__init__()
         self.config = config
@@ -23,15 +22,13 @@ class AbstractDataset(Dataset):
         target_filename = os.path.join(config["data_path"], f"{set}.tgt")
 
         self.source_text = load_data(source_filename, max_length=self.quick_test)
-        self.pretraining = config['pretrain_task']
+        self.pretraining = config["pretrain_task"]
         self.is_casual_model = bool(config["model_name"] in CLM_MODELS)
-        if self.pretraining is None and self.pretraining != 'disabled':
+        if self.pretraining is None and self.pretraining != "disabled":
             self.target_text = load_data(target_filename, max_length=self.quick_test)
         self.source_length = self.config["src_len"]
         self.target_length = self.config["tgt_len"]
-        self.paired_text = bool(
-            set == "train" or (self.set == 'valid' and self.config['metrics_for_best_model'] == ['loss'])
-        )
+        self.paired_text = bool(set == "train" or (self.set == "valid" and self.config["metrics_for_best_model"] == ["loss"]))
         if self.paired_text and self.pretraining is None:
             assert len(self.source_text) == len(self.target_text)
 
@@ -62,9 +59,7 @@ class AbstractDataset(Dataset):
             self.target_length = self.tokenizer.model_max_length
         if self.config["model_name"] in ["unilm"] + CLM_MODELS:
             if self.source_length + self.target_length > self.tokenizer.model_max_length:
-                tgt_len = math.floor(
-                    self.target_length / (self.source_length + self.target_length) * self.tokenizer.model_max_length
-                )
+                tgt_len = math.floor(self.target_length / (self.source_length + self.target_length) * self.tokenizer.model_max_length)
                 src_len = self.tokenizer.model_max_length - tgt_len
                 warnings.warn(
                     f"The max length of the sum of source text {self.source_length} and target text {self.target_length}"
@@ -74,14 +69,14 @@ class AbstractDataset(Dataset):
                 self.target_length = tgt_len
                 self.source_length = src_len
 
-        if (self.config["efficient_methods"] and "prompt-tuning" in self.config["efficient_methods"]):
+        if self.config["efficient_methods"] and "prompt-tuning" in self.config["efficient_methods"]:
             prompt_length = self.config["efficient_kwargs"]["prompt_length"]
             if self.config["model_name"] in CLM_MODELS:
-                if (self.source_length + self.target_length + prompt_length > self.tokenizer.model_max_length):
+                if self.source_length + self.target_length + prompt_length > self.tokenizer.model_max_length:
                     warnings.warn(
                         f"The length of source text {self.source_length}, target text {self.target_length} and prompt {prompt_length} exceeds the max length {self.tokenizer.model_max_length} of {self.config['model']} model, and the max length of source sentence will be set to {self.tokenizer.model_max_length - prompt_length - self.target_length}."
                     )
-                    self.source_length = (self.tokenizer.model_max_length - prompt_length - self.target_length)
+                    self.source_length = self.tokenizer.model_max_length - prompt_length - self.target_length
             elif self.source_length + prompt_length > self.tokenizer.model_max_length:
                 warnings.warn(
                     f"The length of source text {self.source_length} and prompt {prompt_length} exceeds the max length {self.tokenizer.model_max_length} of {self.config['model']} model, and the max length of source sentence will be set to {self.tokenizer.model_max_length - prompt_length}."
@@ -98,8 +93,7 @@ class AbstractDataset(Dataset):
         self.prefix_ids = self.tokenizer.encode(prefix, add_special_tokens=False)
         self.suffix_ids = self.tokenizer.encode(suffix, add_special_tokens=False)
 
-        self.source_max_length = self.source_length - self.tokenizer.num_special_tokens_to_add() \
-                                 - len(self.prefix_ids) - len(self.suffix_ids)
+        self.source_max_length = self.source_length - self.tokenizer.num_special_tokens_to_add() - len(self.prefix_ids) - len(self.suffix_ids)
         self.target_max_length = self.target_length - self.tokenizer.num_special_tokens_to_add()
 
         if self.config["model_name"] in ["bert2bert", "opt", "unilm", "xlm"]:
@@ -118,14 +112,14 @@ class AbstractDataset(Dataset):
         bsz_num = math.ceil(len(self.source_text) / MAX_TOKENIZE_NUM)
         for i in range(bsz_num):
             ids = tokenizer(
-                self.source_text[i * MAX_TOKENIZE_NUM:(i + 1) * MAX_TOKENIZE_NUM],
+                self.source_text[i * MAX_TOKENIZE_NUM : (i + 1) * MAX_TOKENIZE_NUM],
                 add_special_tokens=False,
                 return_token_type_ids=False,
                 return_attention_mask=False,
             )["input_ids"]
             source_ids.extend(ids)
         for ids in source_ids:
-            ids = ids[:self.source_max_length] if self.config["truncate"] == "tail" else ids[-self.source_max_length:]
+            ids = ids[: self.source_max_length] if self.config["truncate"] == "tail" else ids[-self.source_max_length :]
             ids = self.prefix_ids + ids + self.suffix_ids
             if not self.is_casual_model:
                 ids = self.tokenizer.build_inputs_with_special_tokens(ids)
@@ -141,9 +135,9 @@ class AbstractDataset(Dataset):
             )["input_ids"]
             for ids in target_ids:
                 if self.config["truncate"] == "tail":
-                    ids = ids[:self.target_max_length]
+                    ids = ids[: self.target_max_length]
                 else:
-                    ids = ids[-self.target_max_length:]
+                    ids = ids[-self.target_max_length :]
                 ids = self.tokenizer.build_inputs_with_special_tokens(ids)
                 if self.config["model_name"] in ["bert2bert", "opt", "unilm", "xlm"]:
                     ids = ids[1:]
@@ -151,19 +145,16 @@ class AbstractDataset(Dataset):
 
 
 class AbstractCollate:
-
     def __init__(self, config, tokenizer, set):
         self.config = config
         self.tokenizer = tokenizer
         self.set = set
         self.is_casual_model = bool(config["model_name"] in CLM_MODELS)
-        self.paired_text = bool(
-            set == "train" or (self.set == 'valid' and self.config['metrics_for_best_model'] == ['loss'])
-        )
+        self.paired_text = bool(set == "train" or (self.set == "valid" and self.config["metrics_for_best_model"] == ["loss"]))
 
     @classmethod
     def get_type(cls) -> str:
-        return 'pretrain disabled'
+        return "pretrain disabled"
 
     def __call__(self, samples):
         batch = {}
@@ -172,7 +163,7 @@ class AbstractCollate:
         source_mask = []
         source_length = []
         target_text = []
-        source_padding_side = ("left" if not self.paired_text and self.is_casual_model else self.tokenizer.padding_side)
+        source_padding_side = "left" if not self.paired_text and self.is_casual_model else self.tokenizer.padding_side
 
         for sample in samples:
             source_text.append(sample["source_text"])
@@ -195,9 +186,7 @@ class AbstractCollate:
             target_ids = []
             for sample in samples:
                 if self.is_casual_model:
-                    tgt_id = torch.cat([
-                        torch.full([len(sample["source_ids"])], -100, dtype=torch.long), sample["target_ids"]
-                    ])
+                    tgt_id = torch.cat([torch.full([len(sample["source_ids"])], -100, dtype=torch.long), sample["target_ids"]])
                 else:
                     tgt_id = sample["target_ids"]
                 target_ids.append(tgt_id)

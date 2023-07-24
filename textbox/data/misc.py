@@ -16,7 +16,7 @@ def load_data(dataset_path: str, max_length: int = 0):
         List[List[str]]: the text list loaded from dataset path.
     """
     if not os.path.isfile(dataset_path):
-        raise ValueError('File {} not exist'.format(os.path.abspath(dataset_path)))
+        raise ValueError("File {} not exist".format(os.path.abspath(dataset_path)))
 
     text = []
     with open(dataset_path, "r") as fin:
@@ -24,8 +24,7 @@ def load_data(dataset_path: str, max_length: int = 0):
             fin = itertools.islice(fin, max_length)
         for line in fin:
             l = line.strip()
-            if len(l) >= 2 and ((l[0] == '"' and l[-1] == '"') or (l[0] == "'" and l[-1] == "'") or
-                                (l[0] == '[' and l[-1] == ']')):
+            if len(l) >= 2 and ((l[0] == '"' and l[-1] == '"') or (l[0] == "'" and l[-1] == "'") or (l[0] == "[" and l[-1] == "]")):
                 try:
                     l = eval(l)
                     if not isinstance(l, list):
@@ -36,15 +35,15 @@ def load_data(dataset_path: str, max_length: int = 0):
     return text
 
 
-def _pad_sequence(tensors: List[torch.Tensor], padding_value: int, padding_side: str = 'right'):
+def _pad_sequence(tensors: List[torch.Tensor], padding_value: int, padding_side: str = "right"):
     """
     Pad encoded inputs (on left/right and up to max length in the batch)
     """
     max_len = max(tensor.size(0) for tensor in tensors)
     padded_tensors = []
-    if padding_side == 'right':
+    if padding_side == "right":
         return pad_sequence(tensors, batch_first=True, padding_value=padding_value)
-    elif padding_side == 'left':
+    elif padding_side == "left":
         for tensor in tensors:
             padding_length = max_len - len(tensor)
             padded_tensor = torch.cat([torch.full([padding_length], padding_value, dtype=tensor.dtype), tensor], dim=-1)
@@ -67,10 +66,7 @@ def _collate_batch(samples, tokenizer, pad_to_multiple_of: Optional[int] = None)
 
     # If yes, check if we have a `pad_token`.
     if tokenizer._pad_token is None:
-        raise ValueError(
-            "You are attempting to pad samples but the tokenizer you are using"
-            f" ({tokenizer.__class__.__name__}) does not have a pad token."
-        )
+        raise ValueError("You are attempting to pad samples but the tokenizer you are using" f" ({tokenizer.__class__.__name__}) does not have a pad token.")
 
     # Creating the full tensor and filling it with our data.
     max_length = max(x.size(0) for x in samples)
@@ -79,7 +75,7 @@ def _collate_batch(samples, tokenizer, pad_to_multiple_of: Optional[int] = None)
     result = samples[0].new_full([len(samples), max_length], tokenizer.pad_token_id)
     for i, example in enumerate(samples):
         if tokenizer.padding_side == "right":
-            result[i, :example.shape[0]] = example
+            result[i, : example.shape[0]] = example
         else:
-            result[i, -example.shape[0]:] = example
+            result[i, -example.shape[0] :] = example
     return result

@@ -41,7 +41,7 @@ class AbstractScheduler:
         lr = self.lr
 
         for param_group in self.optimizer.param_groups:
-            param_group['lr'] = lr
+            param_group["lr"] = lr
 
     @property
     def lr(self):
@@ -63,24 +63,22 @@ class AbstractScheduler:
 
 
 class InverseSquareRootScheduler(AbstractScheduler):
-
     def __init__(self, base_optimizer: Optimizer, init_lr: float, max_lr: float, n_warmup_steps: int):
         super().__init__(base_optimizer, init_lr)
         self.n_warmup_steps = n_warmup_steps
 
         self.warmup_k = (max_lr - init_lr) / n_warmup_steps
-        self.decay_k = max_lr * (n_warmup_steps ** 0.5)
+        self.decay_k = max_lr * (n_warmup_steps**0.5)
 
     @property
     def lr(self):
         if self.n_steps <= self.n_warmup_steps:
             return self.init_lr + self.warmup_k * self.n_steps
         else:
-            return self.decay_k * self.n_steps ** -0.5
+            return self.decay_k * self.n_steps**-0.5
 
 
 class CosineScheduler(AbstractScheduler):
-
     def __init__(self, base_optimizer: Optimizer, init_lr: float, max_lr: float, n_warmup_steps: int, max_steps: int):
         super().__init__(base_optimizer, init_lr)
         self.n_warmup_steps = n_warmup_steps
@@ -94,11 +92,10 @@ class CosineScheduler(AbstractScheduler):
         if self.n_steps <= self.n_warmup_steps:
             return self.init_lr + self.warmup_k * self.n_steps
         else:
-            return self.init_lr + self.half_delta * (1. + np.cos(self.decay_k * (self.n_steps - self.n_warmup_steps)))
+            return self.init_lr + self.half_delta * (1.0 + np.cos(self.decay_k * (self.n_steps - self.n_warmup_steps)))
 
 
 class LinearScheduler(AbstractScheduler):
-
     def __init__(self, base_optimizer: Optimizer, init_lr: float, max_lr: float, n_warmup_steps: int, max_steps: int):
         super().__init__(base_optimizer, init_lr)
         self.n_warmup_steps = n_warmup_steps
@@ -117,7 +114,6 @@ class LinearScheduler(AbstractScheduler):
 
 
 class ConstantScheduler(AbstractScheduler):
-
     def __init__(self, base_optimizer: Optimizer, init_lr: float, max_lr: float, n_warmup_steps: int):
         super().__init__(base_optimizer, init_lr)
         self.n_warmup_steps = n_warmup_steps

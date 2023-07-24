@@ -3,8 +3,7 @@ from pycocoevalcap.spice.spice import Spice
 
 
 class SpiceEvaluator(AbstractEvaluator):
-    r"""Bleu Evaluator. Now, we support metrics `'bleu'`
-    """
+    r"""Bleu Evaluator. Now, we support metrics `'bleu'`"""
 
     def __init__(self, config):
         super(SpiceEvaluator, self).__init__(config)
@@ -23,5 +22,5 @@ class SpiceEvaluator(AbstractEvaluator):
         refs = {idx: r for idx, r in enumerate(reference_corpus.tokenized_text)}
         gen = {idx: [g] for idx, g in enumerate(generate_corpus.tokenized_text)}
         score = Spice().compute_score(refs, gen)[0]
-        results['spice'] = score * 100
+        results["spice"] = score * 100
         return results

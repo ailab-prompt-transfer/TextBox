@@ -3,8 +3,7 @@ from .abstract_evaluator import AbstractEvaluator
 
 
 class NistEvaluator(AbstractEvaluator):
-    r"""Bleu Evaluator. Now, we support metrics `'bleu'`
-    """
+    r"""Bleu Evaluator. Now, we support metrics `'bleu'`"""
 
     def __init__(self, config):
         super(NistEvaluator, self).__init__(config)
@@ -24,5 +23,5 @@ class NistEvaluator(AbstractEvaluator):
         nist = NISTScore()
         for gen, refs in zip(generate_corpus.text, reference_corpus.text):
             nist.append(gen, refs)
-        results['nist'] = nist.score()
+        results["nist"] = nist.score()
         return results

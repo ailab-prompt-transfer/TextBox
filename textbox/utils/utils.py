@@ -19,7 +19,7 @@ def get_local_time() -> str:
         str: current time
     """
     cur = datetime.datetime.now()
-    cur = cur.strftime('%Y-%b-%d_%H-%M-%S')
+    cur = cur.strftime("%Y-%b-%d_%H-%M-%S")
 
     return cur
 
@@ -73,9 +73,9 @@ def get_tag(_tag: Optional[str], _serial: Optional[int]):
         >>> get_tag('epoch', 1)
         _epoch-1
     """
-    _tag = '' if _tag is None else '_' + _tag
+    _tag = "" if _tag is None else "_" + _tag
     if _serial is not None:
-        _tag += '-' + str(_serial)
+        _tag += "-" + str(_serial)
     return _tag
 
 
@@ -126,23 +126,23 @@ def serialized_save(
         return
 
     # read soft link
-    path_to_link = os.path.abspath(path_without_extension + '_best')
-    path_to_pre_best = os.readlink(path_to_link) if file_exists(path_to_link) else ''
+    path_to_link = os.path.abspath(path_without_extension + "_best")
+    path_to_pre_best = os.readlink(path_to_link) if file_exists(path_to_link) else ""
     serial_of_pre_best = serial
     if not file_exists(path_to_pre_best):
         path_to_pre_best = None
     else:
-        serial_of_pre_best = int(path_to_pre_best.split('-')[-1])
+        serial_of_pre_best = int(path_to_pre_best.split("-")[-1])
 
     # save
     model.save_pretrained(path_to_save)
-    optim_path = os.path.join(path_to_save, 'optimizer.pt')
-    config_path = os.path.join(path_to_save, 'textbox_configuration.pt')
+    optim_path = os.path.join(path_to_save, "optimizer.pt")
+    config_path = os.path.join(path_to_save, "textbox_configuration.pt")
     torch.save(optimizer.state_dict(), optim_path)
     torch.save(source, config_path)
 
     # delete the file beyond the max_save
-    soft_link_goes_beyond = ((max_save - 1) * serial_intervals < serial - serial_of_soft_link)
+    soft_link_goes_beyond = (max_save - 1) * serial_intervals < serial - serial_of_soft_link
     serial_to_delete = serial - (max_save - int(soft_link_goes_beyond)) * serial_intervals
     get_logger(__name__).debug(f'Soft link now are pointing to serial: "{serial_of_soft_link}"')
     if 0 <= serial_to_delete < serial:
@@ -150,7 +150,7 @@ def serialized_save(
         safe_remove(path_to_delete)
 
     # update soft link
-    pre_best_goes_beyond = ((max_save - 1) * serial_intervals < serial - serial_of_pre_best)
+    pre_best_goes_beyond = (max_save - 1) * serial_intervals < serial - serial_of_pre_best
     if serial_of_soft_link == serial:
         if pre_best_goes_beyond:
             safe_remove(path_to_pre_best)
@@ -171,10 +171,10 @@ def get_model(model_name):
         Generator: model class
     """
     if model_name.lower() in PLM_MODELS:
-        model_name = 'Pretrained_Models'
+        model_name = "Pretrained_Models"
     elif model_name.lower() in RNN_MODELS:
-        model_name = 'RNN_Models'
-    module_path = '.'.join(['...model', model_name.lower()])
+        model_name = "RNN_Models"
+    module_path = ".".join(["...model", model_name.lower()])
     if importlib.util.find_spec(module_path, __name__):
         model_module = importlib.import_module(module_path, __name__)
         model_class = getattr(model_module, model_name)
@@ -196,57 +196,54 @@ def get_trainer(model_name):
         ~textbox.trainer.trainer.Trainer: trainer class
     """
     try:
-        return getattr(importlib.import_module('textbox.trainer.trainer'), model_name + 'Trainer')
+        return getattr(importlib.import_module("textbox.trainer.trainer"), model_name + "Trainer")
     except AttributeError:
-        return getattr(importlib.import_module('textbox.trainer.trainer'), 'Trainer')
+        return getattr(importlib.import_module("textbox.trainer.trainer"), "Trainer")
 
 
 def get_tokenizer(config):
-    model_name = config['model_name']
+    model_name = config["model_name"]
     if model_name in PLM_MODELS or model_name in RNN_MODELS:
-        tokenizer_kwargs = config['tokenizer_kwargs'] or {}
-        tokenizer_path = config['tokenizer_path'] or config['model_path']
-        if config['model_name'] in ['chinese-bart', 'chinese-pegasus', 'chinese-gpt2', 'cpt']:
+        tokenizer_kwargs = config["tokenizer_kwargs"] or {}
+        tokenizer_path = config["tokenizer_path"] or config["model_path"]
+        if config["model_name"] in ["chinese-bart", "chinese-pegasus", "chinese-gpt2", "cpt"]:
             tokenizer = BertTokenizer.from_pretrained(tokenizer_path, **tokenizer_kwargs)
         else:
             tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, **tokenizer_kwargs)
 
-        tokenizer.add_tokens(config['tokenizer_add_tokens'])
+        tokenizer.add_tokens(config["tokenizer_add_tokens"])
 
         # (1): tokenizer needs to add eos token
-        if model_name in ['ctrl', 'openai-gpt']:
-            tokenizer.add_special_tokens(({'eos_token': '</s>'}))
+        if model_name in ["ctrl", "openai-gpt"]:
+            tokenizer.add_special_tokens(({"eos_token": "</s>"}))
 
         # (2): tokenizer needs to add pad token
-        if model_name in ['ctrl', 'gpt2', 'gpt_neo', 'openai-gpt']:
+        if model_name in ["ctrl", "gpt2", "gpt_neo", "openai-gpt"]:
             tokenizer.pad_token = tokenizer.eos_token
 
         # (3): tokenizer needs to change replace eos token with sep token
-        if model_name in ['cpm', 'unilm', 'xlm']:
+        if model_name in ["cpm", "unilm", "xlm"]:
             tokenizer.eos_token = tokenizer.sep_token
 
         # (4): tokenizer needs to modify `build_inputs_with_special_tokens()` and `num_special_tokens_to_add()`
-        if model_name in ['blenderbot-small', 'cpm', 'ctrl', 'gpt2', 'gpt_neo', 'openai-gpt']:
+        if model_name in ["blenderbot-small", "cpm", "ctrl", "gpt2", "gpt_neo", "openai-gpt"]:
             tokenizer.build_inputs_with_special_tokens = lambda t0, t1=None: t0 + [tokenizer.eos_token_id]
             tokenizer.num_special_tokens_to_add = lambda: 1
-        elif model_name in ['opt', 'xlm-roberta']:
-            tokenizer.build_inputs_with_special_tokens = \
-                lambda t0, t1=None: [tokenizer.bos_token_id] + t0 + [tokenizer.eos_token_id]
+        elif model_name in ["opt", "xlm-roberta"]:
+            tokenizer.build_inputs_with_special_tokens = lambda t0, t1=None: [tokenizer.bos_token_id] + t0 + [tokenizer.eos_token_id]
             tokenizer.num_special_tokens_to_add = lambda: 2
 
         # (5): tokenizer needs to set src_lang, tgt_lang (used in translation task)
-        if model_name in ['m2m_100', 'mbart', 'marian', 'nllb', 'xlm']:
-            assert config['src_lang'] and config['tgt_lang'], \
-                model_name + ' needs to specify source language and target language ' \
-                             'with `--src_lang=xx` and `--tgt_lang=xx`'
-            tokenizer.src_lang = config['src_lang']
-            tokenizer.tgt_lang = config['tgt_lang']
+        if model_name in ["m2m_100", "mbart", "marian", "nllb", "xlm"]:
+            assert config["src_lang"] and config["tgt_lang"], model_name + " needs to specify source language and target language " "with `--src_lang=xx` and `--tgt_lang=xx`"
+            tokenizer.src_lang = config["src_lang"]
+            tokenizer.tgt_lang = config["tgt_lang"]
 
     return tokenizer
 
 
 def init_seed(seed, reproducibility):
-    r""" init random seed for random functions in numpy, torch, cuda and cudnn
+    r"""init random seed for random functions in numpy, torch, cuda and cudnn
 
     Args:
         seed (int): random seed

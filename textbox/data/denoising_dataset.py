@@ -10,7 +10,7 @@ class DenoisingCollate:
     """Data collator used denoising language modeling task in BART.
     The implementation is based on
     https://github.com/pytorch/fairseq/blob/1bba712622b8ae4efb3eb793a8a40da386fe11d0/fairseq/data/denoising_dataset.py.
-    
+
     BART Original hyperparams: https://github.com/facebookresearch/fairseq/issues/1899#issuecomment-1069429320
     """
 
@@ -18,14 +18,14 @@ class DenoisingCollate:
         self.config = config
         self.tokenizer = tokenizer
         self.set = set
-        self.mask_ratio = config['mask_ratio'] or 0.3
-        self.poisson_lambda = config['poisson_lambda'] or 3.5
-        self.permutate_sentence_ratio = config['permutate_sentence_ratio'] or 1.0
+        self.mask_ratio = config["mask_ratio"] or 0.3
+        self.poisson_lambda = config["poisson_lambda"] or 3.5
+        self.permutate_sentence_ratio = config["permutate_sentence_ratio"] or 1.0
         self.poisson_distribution = torch.distributions.Poisson(rate=self.poisson_lambda)
 
     @classmethod
     def get_type(cls) -> str:
-        return 'denoising (BART)'
+        return "denoising (BART)"
 
     def __post_init__(self):
         if self.tokenizer.mask_token is None or self.tokenizer.eos_token is None:
@@ -39,14 +39,7 @@ class DenoisingCollate:
         # Handle dict or lists with proper padding and conversion to tensor.
         batch = {}
         source_text = [sample["source_text"] for sample in samples]
-        source_ids = self.tokenizer(
-            source_text,
-            max_length=self.config['src_len'],
-            truncation=True,
-            padding=True,
-            return_attention_mask=False,
-            return_tensors='pt'
-        )['input_ids']
+        source_ids = self.tokenizer(source_text, max_length=self.config["src_len"], truncation=True, padding=True, return_attention_mask=False, return_tensors="pt")["input_ids"]
 
         target_ids = source_ids.clone()
         target_ids[torch.eq(target_ids, self.tokenizer.pad_token_id)] = -100
@@ -57,15 +50,10 @@ class DenoisingCollate:
             for text in source_text:
                 texts = sent_tokenize(text)
                 random.shuffle(texts)
-                new_source_text.append(' '.join(texts))
-            source_ids = self.tokenizer(
-                new_source_text,
-                max_length=self.config['src_len'],
-                truncation=True,
-                padding=True,
-                return_attention_mask=False,
-                return_tensors='pt'
-            )['input_ids']
+                new_source_text.append(" ".join(texts))
+            source_ids = self.tokenizer(new_source_text, max_length=self.config["src_len"], truncation=True, padding=True, return_attention_mask=False, return_tensors="pt")[
+                "input_ids"
+            ]
 
         if self.mask_ratio > 0.0:
             source_ids = self.add_whole_word_mask(source_ids)
@@ -77,9 +65,7 @@ class DenoisingCollate:
 
     def add_whole_word_mask(self, inputs):
         bsz, seq_len = inputs.size()
-        special_tokens_mask = [
-            self.tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True) for val in inputs.tolist()
-        ]
+        special_tokens_mask = [self.tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True) for val in inputs.tolist()]
         special_tokens_mask = torch.tensor(special_tokens_mask, dtype=torch.bool)
         # determine how many tokens we need to mask in total
         num_to_mask = math.ceil((~special_tokens_mask).sum() * self.mask_ratio)

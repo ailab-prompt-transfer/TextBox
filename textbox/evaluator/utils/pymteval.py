@@ -87,24 +87,24 @@ class NGramScore(object):
         """This tries to mimic multi-bleu-detok from Moses, and by extension mteval-v13b.
         Code taken directly from there and attempted rewrite into Python."""
         # language-independent part:
-        sent = re.sub(r'<skipped>', r'', sent)  # strip "skipped" tags
-        sent = re.sub(r'-\n', r'', sent)  # strip end-of-line hyphenation and join lines
-        sent = re.sub(r'\n', r' ', sent)  # join lines
-        sent = re.sub(r'&quot;', r'"', sent)  # convert SGML tag for quote to "
-        sent = re.sub(r'&amp;', r'&', sent)  # convert SGML tag for ampersand to &
-        sent = re.sub(r'&lt;', r'<', sent)  # convert SGML tag for less-than to >
-        sent = re.sub(r'&gt;', r'>', sent)  # convert SGML tag for greater-than to <
+        sent = re.sub(r"<skipped>", r"", sent)  # strip "skipped" tags
+        sent = re.sub(r"-\n", r"", sent)  # strip end-of-line hyphenation and join lines
+        sent = re.sub(r"\n", r" ", sent)  # join lines
+        sent = re.sub(r"&quot;", r'"', sent)  # convert SGML tag for quote to "
+        sent = re.sub(r"&amp;", r"&", sent)  # convert SGML tag for ampersand to &
+        sent = re.sub(r"&lt;", r"<", sent)  # convert SGML tag for less-than to >
+        sent = re.sub(r"&gt;", r">", sent)  # convert SGML tag for greater-than to <
 
         # language-dependent part (assuming Western languages):
         sent = " " + sent + " "  # pad with spaces
-        sent = re.sub(r'([\{-\~\[-\` -\&\(-\+\:-\@\/])', r' \1 ', sent)  # tokenize punctuation
-        sent = re.sub(r'([^0-9])([\.,])', r'\1 \2 ', sent)  # tokenize period and comma unless preceded by a digit
-        sent = re.sub(r'([\.,])([^0-9])', r' \1 \2', sent)  # tokenize period and comma unless followed by a digit
-        sent = re.sub(r'([0-9])(-)', r'\1 \2 ', sent)  # tokenize dash when preceded by a digit
-        sent = re.sub(r'\s+', r' ', sent)  # one space only between words
+        sent = re.sub(r"([\{-\~\[-\` -\&\(-\+\:-\@\/])", r" \1 ", sent)  # tokenize punctuation
+        sent = re.sub(r"([^0-9])([\.,])", r"\1 \2 ", sent)  # tokenize period and comma unless preceded by a digit
+        sent = re.sub(r"([\.,])([^0-9])", r" \1 \2", sent)  # tokenize period and comma unless followed by a digit
+        sent = re.sub(r"([0-9])(-)", r"\1 \2 ", sent)  # tokenize dash when preceded by a digit
+        sent = re.sub(r"\s+", r" ", sent)  # one space only between words
         sent = sent.strip()  # remove padding
 
-        return sent.split(' ')
+        return sent.split(" ")
 
 
 class BLEUScore(NGramScore):
@@ -174,7 +174,7 @@ class BLEUScore(NGramScore):
         # brevity penalty (smoothed a bit: if candidate length is 0, we change it to 1e-5
         # to avoid division by zero)
         bp = 1.0
-        if (self.cand_lens[0] <= self.ref_len):
+        if self.cand_lens[0] <= self.ref_len:
             bp = math.exp(1.0 - old_div(self.ref_len, (float(self.cand_lens[0]) if self.cand_lens[0] else 1e-5)))
 
         return bp * self.ngram_precision()

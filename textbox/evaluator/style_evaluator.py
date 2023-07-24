@@ -7,7 +7,6 @@ from transformers import BartTokenizerFast
 
 
 class EmbeddingLayer(nn.Module):
-
     def __init__(self, vocab_size, embed_dim):
         super(EmbeddingLayer, self).__init__()
         self.embeding = nn.Embedding(vocab_size, embed_dim)
@@ -18,7 +17,6 @@ class EmbeddingLayer(nn.Module):
 
 
 class TextCNN(nn.Module):
-
     def __init__(self):
         super(TextCNN, self).__init__()
 
@@ -33,10 +31,7 @@ class TextCNN(nn.Module):
         self.convs = nn.ModuleList([nn.Conv2d(1, n, (f, embed_dim)) for (n, f) in zip(num_filters, filter_sizes)])
 
         self.dropout = nn.Dropout(dropout)
-        self.fc = nn.Sequential(
-            self.dropout, nn.Linear(self.feature_dim, int(self.feature_dim / 2)), nn.ReLU(),
-            nn.Linear(int(self.feature_dim / 2), 2)
-        )
+        self.fc = nn.Sequential(self.dropout, nn.Linear(self.feature_dim, int(self.feature_dim / 2)), nn.ReLU(), nn.Linear(int(self.feature_dim / 2), 2))
 
     def forward(self, inp):
         inp = self.embeder(inp).unsqueeze(1)
@@ -48,15 +43,14 @@ class TextCNN(nn.Module):
 
 
 class StyleEvaluator(AbstractEvaluator):
-    r"""Style Evaluator. Now, we support metrics `'style'`
-    """
+    r"""Style Evaluator. Now, we support metrics `'style'`"""
 
     def __init__(self, config):
         super(StyleEvaluator, self).__init__(config)
-        self.max_len = config['tgt_len']
-        self.batch_size = config['eval_batch_size']
-        self.device = config['device']
-        self.tokenizer = BartTokenizerFast.from_pretrained('facebook/bart-large', add_prefix_space=True)
+        self.max_len = config["tgt_len"]
+        self.batch_size = config["eval_batch_size"]
+        self.device = config["device"]
+        self.tokenizer = BartTokenizerFast.from_pretrained("facebook/bart-large", add_prefix_space=True)
 
         self.model = TextCNN()
         self.model.to(self.device).eval()
@@ -76,11 +70,9 @@ class StyleEvaluator(AbstractEvaluator):
         num = 0
         with torch.no_grad():
             for i in range(ceil(len(generate_corpus.text) / self.batch_size)):
-                texts = generate_corpus.text[i * self.batch_size:(i + 1) * self.batch_size]
-                input_ids = self.tokenizer(
-                    texts, max_length=self.max_len, padding=True, truncation=True, return_tensors="pt"
-                )['input_ids'].to(self.device)
+                texts = generate_corpus.text[i * self.batch_size : (i + 1) * self.batch_size]
+                input_ids = self.tokenizer(texts, max_length=self.max_len, padding=True, truncation=True, return_tensors="pt")["input_ids"].to(self.device)
                 logits = self.model(input_ids)
                 num += logits.argmax(dim=-1).sum().item()
-        results['style'] = num / len(generate_corpus.text) * 100
+        results["style"] = num / len(generate_corpus.text) * 100
         return results

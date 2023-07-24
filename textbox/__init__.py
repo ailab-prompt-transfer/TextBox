@@ -8,4 +8,4 @@ from textbox.quick_start.quick_start import run_textbox
 from textbox.quick_start.hyper_tuning import run_hyper
 from textbox.quick_start.multi_seed import run_multi_seed
 
-__version__ = '0.2.1'
+__version__ = "0.2.1"

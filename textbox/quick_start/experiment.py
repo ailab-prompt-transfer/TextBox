@@ -19,7 +19,7 @@ ResultType = Dict[str, Any]
 
 
 class Experiment:
-    r""" A fast running api, which includes the complete process of
+    r"""A fast running api, which includes the complete process of
     training and testing a model on a specified dataset
 
     Args:
@@ -37,23 +37,18 @@ class Experiment:
         config_dict: Optional[Dict[str, Any]] = None,
     ):
         self.config = Config(model, dataset, config_file_list, config_dict)
-        wandb_setting = 'wandb ' + self.config['wandb']
+        wandb_setting = "wandb " + self.config["wandb"]
         os.system(wandb_setting)
         self.__extended_config = None
 
         from accelerate import DistributedDataParallelKwargs
-        ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=self.config['find_unused_parameters'])
-        self.accelerator = Accelerator(
-            gradient_accumulation_steps=self.config['accumulation_steps'], kwargs_handlers=[ddp_kwargs]
-        )
-        self.config.update({
-            '_is_local_main_process': self.accelerator.is_local_main_process,
-            'device': self.accelerator.device
-        })
+
+        ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=self.config["find_unused_parameters"])
+        self.accelerator = Accelerator(gradient_accumulation_steps=self.config["accumulation_steps"], kwargs_handlers=[ddp_kwargs])
+        self.config.update({"_is_local_main_process": self.accelerator.is_local_main_process, "device": self.accelerator.device})
         self.logger = self.init_logger(self.config)
         self.summary_tracker = SummaryTracker.basicConfig(self.get_config())
-        self.train_data, self.valid_data, self.test_data, self.tokenizer = \
-            self._init_data(self.get_config(), self.accelerator)
+        self.train_data, self.valid_data, self.test_data, self.tokenizer = self._init_data(self.get_config(), self.accelerator)
 
     def get_config(self) -> Config:
         config = copy(self.config)
@@ -63,14 +58,8 @@ class Experiment:
 
     @staticmethod
     def init_logger(config: Config) -> logging.Logger:
-
         # logger initialization
-        init_logger(
-            filename=config['filename'],
-            log_level=config['state'],
-            enabled=config['_is_local_main_process'],
-            saved_dir=config['saved_dir']
-        )
+        init_logger(filename=config["filename"], log_level=config["state"], enabled=config["_is_local_main_process"], saved_dir=config["saved_dir"])
         logger = get_logger(__name__)
         logger.info(config)
 
@@ -89,24 +78,24 @@ class Experiment:
         """
         self.__extended_config = extended_config
         config = self.get_config()
-        init_seed(config['seed'], config['reproducibility'])
+        init_seed(config["seed"], config["reproducibility"])
 
-        self.model = get_model(config['model'])(config, self.tokenizer).to(config['device'])
+        self.model = get_model(config["model"])(config, self.tokenizer).to(config["device"])
         self.logger.info(self.model)
-        self.trainer: Trainer = get_trainer(config['model'])(config, self.model, self.accelerator)
-        self.do_train = config['do_train']
-        self.do_valid = config['do_valid']
-        self.do_test = config['do_test']
+        self.trainer: Trainer = get_trainer(config["model"])(config, self.model, self.accelerator)
+        self.do_train = config["do_train"]
+        self.do_valid = config["do_valid"]
+        self.do_test = config["do_test"]
         self.valid_result: Optional[ResultType] = None
         self.test_result: Optional[ResultType] = None
-        if config['load_type'] == 'resume':
-            if config['resume_training']:
-                self.trainer.resume_checkpoint(config['model_path'])
-            self.model.from_pretrained(config['model_path'])
+        if config["load_type"] == "resume":
+            if config["resume_training"]:
+                self.trainer.resume_checkpoint(config["model_path"])
+            self.model.from_pretrained(config["model_path"])
 
     def _do_train_and_valid(self):
         if not self.do_train and self.do_valid:
-            raise ValueError('Cannot execute validation without training.')
+            raise ValueError("Cannot execute validation without training.")
 
         if self.do_train:
             train_data = self.train_data
@@ -116,20 +105,17 @@ class Experiment:
 
     def _do_test(self):
         if self.do_test:
-            with self.summary_tracker.new_epoch('eval'):
+            with self.summary_tracker.new_epoch("eval"):
                 self.test_result = self.trainer.evaluate(self.test_data, load_best_model=self.do_train)
                 self.summary_tracker.set_metrics_results(self.test_result)
-                self.logger.info(
-                    'Evaluation result:\n{}'.format(self.summary_tracker._current_epoch.as_str(sep=",\n", indent=" "))
-                )
+                self.logger.info("Evaluation result:\n{}".format(self.summary_tracker._current_epoch.as_str(sep=",\n", indent=" ")))
 
     def _on_experiment_end(self):
-        if self.config['max_save'] == 0:
-            saved_dir = os.path.abspath(
-                os.path.join(self.config['saved_dir'], self.config['filename'], 'checkpoint_best')
-            )
-            saved_link = os.readlink(saved_dir) if os.path.exists(saved_dir) else ''
+        if self.config["max_save"] == 0:
+            saved_dir = os.path.abspath(os.path.join(self.config["saved_dir"], self.config["filename"], "checkpoint_best"))
+            saved_link = os.readlink(saved_dir) if os.path.exists(saved_dir) else ""
             from ..utils import safe_remove
+
             safe_remove(saved_dir)
             safe_remove(saved_link)
         self.__extended_config = None

@@ -1,12 +1,12 @@
 import numpy as np
 
 
-class AbstractEvaluator():
+class AbstractEvaluator:
     """:class:`AbstractEvaluator` is an abstract object which supports
     the evaluation of the model. It is called by :class:`Trainer`.
 
-    Note:       
-        If you want to inherit this class and implement your own evalautor class, 
+    Note:
+        If you want to inherit this class and implement your own evalautor class,
         you must implement the following functions.
 
     Args:
@@ -24,7 +24,7 @@ class AbstractEvaluator():
             generate_corpus: the generated corpus
             reference_corpus: the referenced corpus
             avg: whether or not to average the metric results
-        
+
         Returns:
             dict: such as ``{metric-1: xxx}``
         """
@@ -32,9 +32,9 @@ class AbstractEvaluator():
         if avg:
             for k, v in metric_dict.items():
                 if isinstance(v, list) or isinstance(v, float):
-                    metric_dict[k] = round(np.mean(v), 2 if k != 'cider' else 3)
+                    metric_dict[k] = round(np.mean(v), 2 if k != "cider" else 3)
         return metric_dict
 
     def _calc_metrics_info(self):
-        """ to calculate the metrics"""
+        """to calculate the metrics"""
         raise NotImplementedError
