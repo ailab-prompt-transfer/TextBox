@@ -43,7 +43,7 @@ class PTG(Pretrained_Models):
         self.q_proj = nn.Linear(self.embedding_size, self.embedding_size)
         self.out_proj = nn.Linear(self.embedding_size, self.embedding_size)
         self.task_key = nn.Embedding(self.task_num + 1, self.embedding_size)  # tn+1, e
-        self.model.requires_grad_(True)
+        self.model.requires_grad_(True) # ***
         self.bert_model.requires_grad_(False)
 
     def sentence_embedding(self, text):
