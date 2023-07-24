@@ -220,7 +220,6 @@ class Trainer(AbstractTrainer):
                             train_tqdm.set_postfix(loss=self._summary_tracker.epoch_loss)
                         if valid_data:
                             self.stopped |= self._valid(valid_data, "step")
-                            self.accelerator.gradient_state._set_end_of_dataloader(False)
                         if self.stopped:
                             break
 
