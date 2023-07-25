@@ -28,3 +28,4 @@ test/
 textbox/evaluator/test_evaluator.py
 transformers/
 mj.md
+test.py

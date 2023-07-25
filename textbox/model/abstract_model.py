@@ -64,7 +64,7 @@ class AbstractModel(nn.Module):
         inputs = self.process_forward_inputs(batch)
 
         if self.is_prompt_tuning:
-            inputs = self._process_prompt_tuning_input(inputs, batch)
+            inputs = self._process_prompt_tuning_input(inputs, batch)  # prompt + input text
         outputs = self.model(**inputs)
 
         if self.label_smoothing:
@@ -149,3 +149,4 @@ class AbstractModel(nn.Module):
         else:
             state_dict = OrderedDict([(k, v.detach().cpu()) for k, v in self.state_dict().items()])
             torch.save(state_dict, os.path.join(save_directory, "pytorch_model.bin"))
+            self._save_adaptive_attention(save_directory)  # , f"{self.config['source_task']}-{self.config['dataset']}")

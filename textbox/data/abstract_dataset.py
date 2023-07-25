@@ -89,8 +89,8 @@ class AbstractDataset(Dataset):
 
     def _process_prompt(self):
         # *** delete prefixs in PTG
-        prefix = "" #self.config["prefix_prompt"] or ""
-        suffix = "" #self.config["suffix_prompt"] or ""
+        prefix = ""  # self.config["prefix_prompt"] or ""
+        suffix = ""  # self.config["suffix_prompt"] or ""
 
         self.prefix_ids = self.tokenizer.encode(prefix, add_special_tokens=False)
         self.suffix_ids = self.tokenizer.encode(suffix, add_special_tokens=False)
