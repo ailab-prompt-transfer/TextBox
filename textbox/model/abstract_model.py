@@ -148,5 +148,10 @@ class AbstractModel(nn.Module):
             self.model.save_pretrained(save_directory)
         else:
             state_dict = OrderedDict([(k, v.detach().cpu()) for k, v in self.state_dict().items()])
-            torch.save(state_dict, os.path.join(save_directory, "pytorch_model.bin"))
-            self._save_adaptive_attention(save_directory)  # , f"{self.config['source_task']}-{self.config['dataset']}")
+            if self.config["training_option"] == "adaptive-attention":
+                self._save_adaptive_attention(save_directory)  # , f"{self.config['source_task']}-{self.config['dataset']}")
+            elif self.config["training_option"] == "BART-finetuning":
+                torch.save(state_dict, os.path.join(save_directory, "pytorch_model.bin"))
+            else:
+                self._save_adaptive_attention(save_directory)
+                torch.save(state_dict, os.path.join(save_directory, "pytorch_model.bin"))
