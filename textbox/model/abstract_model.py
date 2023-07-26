@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from textbox import CLM_MODELS, SEQ2SEQ_MODELS, RNN_MODELS, PLM_MODELS
-from transformers import EncoderDecoderModel
+from transformers import EncoderDecoderModel, AutoModelForSeq2SeqLM, AutoConfig
 import os
 from typing import List, Optional, Tuple, Union
 from transformers.modeling_utils import get_parameter_dtype
@@ -118,10 +118,23 @@ class AbstractModel(nn.Module):
     def from_pretrained(self, save_directory: Union[str, os.PathLike]):
         if self.model_name in ["bert2bert", "xlm-roberta", "xlm"]:
             self.model = EncoderDecoderModel.from_pretrained(save_directory)
-        else:
-            model_path = os.path.join(save_directory, "pytorch_model.bin")
-            model_load = torch.load(model_path, map_location=self.device)
-            self.load_state_dict(model_load)
+        else:  # ***
+            if self.config["training_option"] == "adaptive-attention":
+                config_path = self.config["config_path"] or self.config["model_path"] or None
+                config_kwargs = self.config["config_kwargs"] or {}
+                self.configuration = AutoConfig.from_pretrained(config_path, **config_kwargs)
+
+                self.model = AutoModelForSeq2SeqLM.from_pretrained(self.config["model_path"], config=self.configuration)
+                self.k_proj = torch.load(os.path.join(save_directory, "k_proj.pkl"))
+                self.v_proj = torch.load(os.path.join(save_directory, "v_proj.pkl"))
+                self.q_proj = torch.load(os.path.join(save_directory, "q_proj.pkl"))
+                self.out_proj = torch.load(os.path.join(save_directory, "out_proj.pkl"))
+                self.task_key = torch.load(os.path.join(save_directory, "task_key.pkl"))
+
+            elif self.config["training_option"] == "BART-finetuning":
+                model_path = os.path.join(save_directory, "pytorch_model.bin")
+                model_load = torch.load(model_path, map_location=self.device)
+                self.load_state_dict(model_load)
 
     def save_pretrained(
         self,

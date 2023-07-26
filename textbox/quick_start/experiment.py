@@ -106,7 +106,7 @@ class Experiment:
 
     def _do_test(self):
         if self.do_test:
-            with self.summary_tracker.new_epoch("eval"):
+            with self.summary_tracker.new_epoch("eval"):  # self.model = PTG
                 self.test_result = self.trainer.evaluate(self.test_data, load_best_model=self.do_train)
                 self.summary_tracker.set_metrics_results(self.test_result)
                 self.logger.info("Evaluation result:\n{}".format(self.summary_tracker._current_epoch.as_str(sep=",\n", indent=" ")))

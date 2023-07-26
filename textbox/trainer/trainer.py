@@ -471,7 +471,7 @@ class Trainer(AbstractTrainer):
 
         if load_best_model:
             checkpoint_dir = self.saved_model_filename + "_best"
-            self.logger.info("Loading model structure and parameters from {} ...".format(checkpoint_dir))
+            self.logger.info("Loading model structure and parameters from {} ...".format(checkpoint_dir))  # checkpoint_best
             self.accelerator.wait_for_everyone()
             unwrap_model = self.accelerator.unwrap_model(self.model)
             unwrap_model.from_pretrained(checkpoint_dir)
