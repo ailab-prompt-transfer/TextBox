@@ -5,3 +5,4 @@ prompt_source_path: 'prompt_source.pth'
 efficient_methods: ['prompt-tuning']
 efficient_kwargs: {'prompt_length': 200}
 ptg_lambda: 0.5
+training_option: 'adaptive-attention' # adaptive-attention or BART-finetuning

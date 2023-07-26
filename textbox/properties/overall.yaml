@@ -4,21 +4,21 @@ use_gpu: True
 seed: 2020
 state: INFO
 reproducibility: True
-data_path: 'dataset/'
-wandb: 'online'
+data_path: "dataset/"
+wandb: "online"
 
 # training settings
 epochs: 50
 train_batch_size: 16
 optimizer: adamw
-learning_rate: 3e-5
+learning_rate: 1e-3  # ***3e-5
 valid_strategy: epoch
 valid_steps: 1
 stopping_steps: 2
 grad_clip: 0.1
 optimizer_kwargs: {}
 accumulation_steps: 1
-adafactor_kwargs: {'lr': 1e-3, 'scale_parameter': False, 'relative_step': False, 'warmup_init': False}
+adafactor_kwargs: {"lr": 1e-3, "scale_parameter": False, "relative_step": False, "warmup_init": False}
 find_unused_parameters: False
 
 # evaluation settings
@@ -27,9 +27,9 @@ eval_batch_size: 64
 
 # Pretrained model settings
 config_kwargs: {}
-tokenizer_kwargs: {'use_fast': True} #'additional_special_tokens': None
+tokenizer_kwargs: {"use_fast": True}  #'additional_special_tokens': None
 tokenizer_add_tokens: []
-generation_kwargs: {'num_beams': 5, 'no_repeat_ngram_size': 3, 'early_stopping': True}
+generation_kwargs: {"num_beams": 5, "no_repeat_ngram_size": 3, "early_stopping": True}
 # efficient_methods: ['lora']
 # efficient_kwargs: {'lora_r': 4, 'lora_dropout': 0.1, 'lora_alpha': 32}
 # efficient_methods: ['prefix-tuning'] # ['p-tuning-v2']
@@ -43,7 +43,7 @@ generation_kwargs: {'num_beams': 5, 'no_repeat_ngram_size': 3, 'early_stopping':
 efficient_methods: []
 efficient_kwargs: {}
 efficient_unfreeze_model: False
-label_smoothing: 0.1
+label_smoothing: 0.0  # ***0.1
 
 # Evaluation settings
 lower_evaluation: True
@@ -60,7 +60,7 @@ rouge_type: files2rouge
 meteor_type: pycocoevalcap
 corpus_meteor: True
 
-chrf_type: m-popovic
+chrf_type: m - popovic
 
 distinct_max_ngrams: 4
 inter_distinct: True
@@ -70,5 +70,5 @@ unique_max_ngrams: 4
 self_bleu_max_ngrams: 4
 
 # Dataset Parameters
-tgt_lang: 'en'
+tgt_lang: "en"
 truncate: tail
