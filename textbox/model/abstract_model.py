@@ -125,9 +125,10 @@ class AbstractModel(nn.Module):
                 self.configuration = AutoConfig.from_pretrained(config_path, **config_kwargs)
 
                 self.model = AutoModelForSeq2SeqLM.from_pretrained(self.config["model_path"], config=self.configuration)
-                self.k_proj = torch.load(os.path.join(save_directory, "k_proj.pkl"))
-                self.v_proj = torch.load(os.path.join(save_directory, "v_proj.pkl"))
-                self.q_proj = torch.load(os.path.join(save_directory, "q_proj.pkl"))
+                if self.config["QKV_training"] == "True":
+                    self.k_proj = torch.load(os.path.join(save_directory, "k_proj.pkl"))
+                    self.v_proj = torch.load(os.path.join(save_directory, "v_proj.pkl"))
+                    self.q_proj = torch.load(os.path.join(save_directory, "q_proj.pkl"))
                 self.out_proj = torch.load(os.path.join(save_directory, "out_proj.pkl"))
                 self.task_key = torch.load(os.path.join(save_directory, "task_key.pkl"))
 
