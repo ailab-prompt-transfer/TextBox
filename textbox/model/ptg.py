@@ -40,13 +40,40 @@ class PTG(Pretrained_Models):
         self.head_num = self.model.config.num_attention_heads
         self.head_dim = self.embedding_size // self.head_num
         self.scaling = self.head_dim**-0.5
-        if config["QKV_training"] == "True":
-            self.k_proj = nn.Linear(self.embedding_size, self.embedding_size)
-            self.v_proj = nn.Linear(self.embedding_size, self.embedding_size)
-            self.q_proj = nn.Linear(self.embedding_size, self.embedding_size)
-        self.out_proj = nn.Linear(self.embedding_size, self.embedding_size)
-        self.task_key = nn.Embedding(self.task_num + 1, self.embedding_size)  # tn+1, e
-        self.model.requires_grad_(False)  # *** Frozen BART model
+
+        if config["training_option"] == "adaptive-attention":  # training QKV, query keys
+            if config["QKV_training"] == "True" or config["QKV_training"] == True:
+                self.k_proj = nn.Linear(self.embedding_size, self.embedding_size)
+                self.v_proj = nn.Linear(self.embedding_size, self.embedding_size)
+                self.q_proj = nn.Linear(self.embedding_size, self.embedding_size)
+            self.out_proj = nn.Linear(self.embedding_size, self.embedding_size)
+            self.task_key = nn.Embedding(self.task_num + 1, self.embedding_size)  # tn+1, e
+            self.model.requires_grad_(False)  # *** Frozen BART model
+
+        elif self.config["training_option"] == "BART-finetuning":
+            if config["attention_path"]:
+                pass
+            else:
+                raise ValueError("If you want to fine-tune BART, please input query and key path in args: --attention_path")
+
+            if config["QKV_training"] == "True" or config["QKV_training"] == True:
+                self.k_proj = torch.load(os.path.join("/workspace/TextBox/saved", config["attention_path"], "k_proj.pkl"))
+                self.v_proj = torch.load(os.path.join("/workspace/TextBox/saved", config["attention_path"], "v_proj.pkl"))
+                self.q_proj = torch.load(os.path.join("/workspace/TextBox/saved", config["attention_path"], "q_proj.pkl"))
+                self.k_proj.requires_grad_(False)
+                self.v_proj.requires_grad_(False)
+                self.q_proj.requires_grad_(False)
+
+            self.out_proj = torch.load(os.path.join("/workspace/TextBox/saved", config["attention_path"], "out_proj.pkl"))
+            self.task_key = torch.load(os.path.join("/workspace/TextBox/saved", config["attention_path"], "task_key.pkl"))
+            self.out_proj.requires_grad_(False)
+            self.task_key.requires_grad_(False)
+
+            self.model.requires_grad_(True)  # Fine-tuning BART model
+
+        else:
+            raise ValueError("Please select option in --training_option : 'adaptive-attention' or 'BART-finetuning'")
+
         self.bert_model.requires_grad_(False)
 
     def sentence_embedding(self, text):
@@ -81,7 +108,7 @@ class PTG(Pretrained_Models):
         batch_size = input_ids.size(0)
         inputs_embeds = self.model.get_input_embeddings()(input_ids)  # b, l, e
         task_key = self.task_key.weight.repeat(batch_size, 1, 1)  # b, tn+1, e
-        if self.config["QKV_training"] == "True":
+        if self.config["QKV_training"] == "True" or self.config["QKV_training"] == True:
             task_query = self.q_proj(task_key[:, -1:])  # b, 1, e
             key = self.k_proj(task_key[:, :-1])  # b, tn, e
             value = self.v_proj(self.task_embedding).reshape(self.task_num, -1).repeat(batch_size, 1, 1)  # b, tn, pl*e
@@ -101,7 +128,7 @@ class PTG(Pretrained_Models):
 
     def _save_adaptive_attention(self, path):  # _가 원래 내부 사용에만 붙이는걸로 아는데 textbox코드엔 반대로 되어있어서 일단 붙임 (abstract_model에서만 사용됨)
         Path(path).mkdir(parents=True, exist_ok=True)
-        if self.config["QKV_training"] == "True":
+        if self.config["QKV_training"] == "True" or self.config["QKV_training"] == True:
             torch.save(self.k_proj, os.path.join(path, "k_proj.pkl"))
             torch.save(self.v_proj, os.path.join(path, "v_proj.pkl"))
             torch.save(self.q_proj, os.path.join(path, "q_proj.pkl"))
