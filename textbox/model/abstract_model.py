@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from textbox import CLM_MODELS, SEQ2SEQ_MODELS, RNN_MODELS, PLM_MODELS
-from transformers import EncoderDecoderModel
+from transformers import EncoderDecoderModel, AutoModelForSeq2SeqLM, AutoConfig
 import os
 from typing import List, Optional, Tuple, Union
 from transformers.modeling_utils import get_parameter_dtype
@@ -64,7 +64,7 @@ class AbstractModel(nn.Module):
         inputs = self.process_forward_inputs(batch)
 
         if self.is_prompt_tuning:
-            inputs = self._process_prompt_tuning_input(inputs, batch)
+            inputs = self._process_prompt_tuning_input(inputs, batch)  # prompt + input text
         outputs = self.model(**inputs)
 
         if self.label_smoothing:
@@ -118,10 +118,24 @@ class AbstractModel(nn.Module):
     def from_pretrained(self, save_directory: Union[str, os.PathLike]):
         if self.model_name in ["bert2bert", "xlm-roberta", "xlm"]:
             self.model = EncoderDecoderModel.from_pretrained(save_directory)
-        else:
-            model_path = os.path.join(save_directory, "pytorch_model.bin")
-            model_load = torch.load(model_path, map_location=self.device)
-            self.load_state_dict(model_load)
+        else:  # ***
+            if self.config["training_option"] == "adaptive-attention":
+                config_path = self.config["config_path"] or self.config["model_path"] or None
+                config_kwargs = self.config["config_kwargs"] or {}
+                self.configuration = AutoConfig.from_pretrained(config_path, **config_kwargs)
+
+                self.model = AutoModelForSeq2SeqLM.from_pretrained(self.config["model_path"], config=self.configuration)
+                if self.config["QKV_training"] == "True" or self.config["QKV_training"] == True:
+                    self.k_proj = torch.load(os.path.join(save_directory, "k_proj.pkl"))
+                    self.v_proj = torch.load(os.path.join(save_directory, "v_proj.pkl"))
+                    self.q_proj = torch.load(os.path.join(save_directory, "q_proj.pkl"))
+                self.out_proj = torch.load(os.path.join(save_directory, "out_proj.pkl"))
+                self.task_key = torch.load(os.path.join(save_directory, "task_key.pkl"))
+
+            elif self.config["training_option"] == "BART-finetuning":
+                model_path = os.path.join(save_directory, "pytorch_model.bin")
+                model_load = torch.load(model_path, map_location=self.device)
+                self.load_state_dict(model_load)
 
     def save_pretrained(
         self,
@@ -148,4 +162,11 @@ class AbstractModel(nn.Module):
             self.model.save_pretrained(save_directory)
         else:
             state_dict = OrderedDict([(k, v.detach().cpu()) for k, v in self.state_dict().items()])
-            torch.save(state_dict, os.path.join(save_directory, "pytorch_model.bin"))
+
+            if self.config["training_option"] == "adaptive-attention":  # QKV,query key 저장
+                self._save_adaptive_attention(save_directory)
+            elif self.config["training_option"] == "BART-finetuning":  # Finetuned된 BART 모델 저장
+                torch.save(state_dict, os.path.join(save_directory, "pytorch_model.bin"))
+            else:
+                self._save_adaptive_attention(save_directory)
+                torch.save(state_dict, os.path.join(save_directory, "pytorch_model.bin"))

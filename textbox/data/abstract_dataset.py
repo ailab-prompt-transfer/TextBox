@@ -21,11 +21,11 @@ class AbstractDataset(Dataset):
         source_filename = os.path.join(config["data_path"], f"{set}.src")
         target_filename = os.path.join(config["data_path"], f"{set}.tgt")
 
-        self.source_text = load_data(source_filename, max_length=self.quick_test)[:10]  ##***
+        self.source_text = load_data(source_filename, max_length=self.quick_test)[:]  ##***
         self.pretraining = config["pretrain_task"]
         self.is_casual_model = bool(config["model_name"] in CLM_MODELS)
         if self.pretraining is None and self.pretraining != "disabled":
-            self.target_text = load_data(target_filename, max_length=self.quick_test)[:10]  ##***
+            self.target_text = load_data(target_filename, max_length=self.quick_test)[:]  ##***
 
         self.source_length = self.config["src_len"]
         self.target_length = self.config["tgt_len"]
@@ -89,8 +89,8 @@ class AbstractDataset(Dataset):
 
     def _process_prompt(self):
         # *** delete prefixs in PTG
-        prefix = "" #self.config["prefix_prompt"] or ""
-        suffix = "" #self.config["suffix_prompt"] or ""
+        prefix = ""  # self.config["prefix_prompt"] or ""
+        suffix = ""  # self.config["suffix_prompt"] or ""
 
         self.prefix_ids = self.tokenizer.encode(prefix, add_special_tokens=False)
         self.suffix_ids = self.tokenizer.encode(suffix, add_special_tokens=False)
