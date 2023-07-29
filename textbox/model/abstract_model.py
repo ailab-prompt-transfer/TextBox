@@ -125,7 +125,7 @@ class AbstractModel(nn.Module):
                 self.configuration = AutoConfig.from_pretrained(config_path, **config_kwargs)
 
                 self.model = AutoModelForSeq2SeqLM.from_pretrained(self.config["model_path"], config=self.configuration)
-                if self.config["QKV_training"] == "True":
+                if self.config["QKV_training"] == "True" or self.config["QKV_training"] == True:
                     self.k_proj = torch.load(os.path.join(save_directory, "k_proj.pkl"))
                     self.v_proj = torch.load(os.path.join(save_directory, "v_proj.pkl"))
                     self.q_proj = torch.load(os.path.join(save_directory, "q_proj.pkl"))
@@ -162,9 +162,10 @@ class AbstractModel(nn.Module):
             self.model.save_pretrained(save_directory)
         else:
             state_dict = OrderedDict([(k, v.detach().cpu()) for k, v in self.state_dict().items()])
-            if self.config["training_option"] == "adaptive-attention":
-                self._save_adaptive_attention(save_directory)  # , f"{self.config['source_task']}-{self.config['dataset']}")
-            elif self.config["training_option"] == "BART-finetuning":
+
+            if self.config["training_option"] == "adaptive-attention":  # QKV,query key 저장
+                self._save_adaptive_attention(save_directory)
+            elif self.config["training_option"] == "BART-finetuning":  # Finetuned된 BART 모델 저장
                 torch.save(state_dict, os.path.join(save_directory, "pytorch_model.bin"))
             else:
                 self._save_adaptive_attention(save_directory)
