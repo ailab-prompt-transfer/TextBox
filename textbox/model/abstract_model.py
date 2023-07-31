@@ -137,6 +137,13 @@ class AbstractModel(nn.Module):
                 model_load = torch.load(model_path, map_location=self.device)
                 self.load_state_dict(model_load)
 
+                if self.config["QKV_training"] == "True" or self.config["QKV_training"] == True:
+                    self.k_proj = torch.load(os.path.join("/workspace/TextBox/saved", self.config["attention_path"], "k_proj.pkl"))
+                    self.v_proj = torch.load(os.path.join("/workspace/TextBox/saved", self.config["attention_path"], "v_proj.pkl"))
+                    self.q_proj = torch.load(os.path.join("/workspace/TextBox/saved", self.config["attention_path"], "q_proj.pkl"))
+                self.out_proj = torch.load(os.path.join("/workspace/TextBox/saved", self.config["attention_path"], "out_proj.pkl"))
+                self.task_key = torch.load(os.path.join("/workspace/TextBox/saved", self.config["attention_path"], "task_key.pkl"))
+
     def save_pretrained(
         self,
         save_directory: Union[str, os.PathLike],
